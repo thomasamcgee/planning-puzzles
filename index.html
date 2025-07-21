@@ -764,33 +764,56 @@ Change list B to 2.</pre>
  });
  }
 
- async function finishStudy() {
- if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
- document.getElementById('task-ui').style.display='none';
+async function finishStudy() {
+  if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+  document.getElementById('task-ui').style.display = 'none';
 
- const puzzleData = { participantData, puzzleLogs:allProblemLogs };
- const zip = new JSZip();
- zip.file("puzzle_data.json", JSON.stringify(puzzleData,null,2));
+  // 1) Upload JSON to Azure
+  await saveToCloud(participantData, allProblemLogs);
 
- audioChunks.forEach(({block,trial,blob}) => {
- zip.file(`block${block}_problem${trial}.webm`, blob);
- });
+  // 2) Local ZIP download
+  const puzzleData = { participantData, puzzleLogs: allProblemLogs };
+  const zip = new JSZip();
+  zip.file("puzzle_data.json", JSON.stringify(puzzleData, null, 2));
 
- const zipBlob = await zip.generateAsync({type:"blob"});
- saveAs(zipBlob, "combined_task_data_with_audio.zip");
+  audioChunks.forEach(({ block, trial, blob }) => {
+    zip.file(`block${block}_problem${trial}.webm`, blob);
+  });
 
- document.getElementById('end-screen').style.display='block';
- document.addEventListener('keydown', onEndScreenKey);
- }
+  const zipBlob = await zip.generateAsync({ type: "blob" });
+  saveAs(zipBlob, "combined_task_data_with_audio.zip");
 
- function onEndScreenKey() {
- document.removeEventListener('keydown', onEndScreenKey);
- console.log("User pressed a key on end screen—trigger payment logic here!");
- }
+  document.getElementById('end-screen').style.display = 'block';
+  document.addEventListener('keydown', onEndScreenKey);
+}
+
+function onEndScreenKey() {
+  document.removeEventListener('keydown', onEndScreenKey);
+  console.log("User pressed a key on end screen—trigger payment logic here!");
+}
 
  // --------------------------------------
  // START
  // --------------------------------------
+ async function saveToCloud(participantData, puzzleLogs) {
+  try {
+    const res = await fetch(
+      "https://puzzle-func.azurewebsites.net/api/savePuzzle?code=YOUR_FUNCTION_KEY_HERE",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          participantId: participantData.agreement,
+          logs: { participantData, puzzleLogs }
+        })
+      }
+    );
+    if (!res.ok) console.error(await res.text());
+  } catch (e) {
+    console.error(e);
+  }
+}
+
  startIntro();
 </script>
 </body>
