@@ -763,12 +763,37 @@ Change list B to 2.</pre>
  }
  });
  }
+ const API_BASE = "https://PlanningPuzzlesDataStorage.azurewebsites.net/api";
 
+ async function saveJsonAndGetId(payload) {
+   const res = await fetch(`${API_BASE}/savePuzzleData`, {
+     method: "POST",
+     headers: {"Content-Type":"application/json"},
+     body: JSON.stringify(payload)
+   });
+   if (!res.ok) throw new Error(await res.text());
+   return (await res.json()).sessionId;
+ }
+
+ async function uploadAudioChunks(sessionId) {
+   // audioChunks is already populated by your recorder
+   await Promise.all(audioChunks.map(({ block, trial, blob }) => {
+     const fd = new FormData();
+     fd.append("file", blob, `block${block}_problem${trial}.webm`);
+     return fetch(`${API_BASE}/uploadAudio?sessionId=${sessionId}&block=${block}&trial=${trial}`, {
+       method: "POST",
+       body: fd
+     });
+   }));
+ }
  async function finishStudy() {
  if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
  document.getElementById('task-ui').style.display='none';
 
  const puzzleData = { participantData, puzzleLogs:allProblemLogs };
+ const sessionId = await saveJsonAndGetId(puzzleData);
+ await uploadAudioChunks(sessionId);
+  
  const zip = new JSZip();
  zip.file("puzzle_data.json", JSON.stringify(puzzleData,null,2));
 
