@@ -983,11 +983,41 @@ Change list A to 1.</pre>
  });
  }
 
+
+ const API_BASE = "https://planningpuzzlesdatastorage-b8b6ddd6gwgrg4ax.eastus-01.azurewebsites.net/api";
+ const FUNC_KEY = "3edoTFVBF3NP2lhr8em7mo1wd4B6bb6No3r-TKVGNfkrAzFu6YRyOA==";
+
+ async function saveJsonAndGetId(payload) {
+   const res = await fetch(`${API_BASE}/savePuzzleData?code=${FUNC_KEY}`, {
+     method: "POST",
+     headers: { "Content-Type": "application/json" },
+     body: JSON.stringify(payload)
+   });
+   if (!res.ok) throw new Error(await res.text());
+   return (await res.json()).sessionId;
+ }
+
+ async function uploadAudioChunks(sessionId) {
+   await Promise.all(audioChunks.map(({ block, trial, blob }) => {
+     const fd = new FormData();
+     fd.append("file", blob, `block${block}_problem${trial}.webm`);
+     return fetch(
+       `${API_BASE}/uploadAudio?code=${FUNC_KEY}&sessionId=${sessionId}&block=${block}&trial=${trial}`,
+       { method: "POST", body: fd }
+     );
+   }));
+ }
+
+
+
  async function finishStudy() {
  if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
  document.getElementById('task-ui').style.display='none';
 
  const puzzleData = { participantData, puzzleLogs:allProblemLogs };
+ const sessionId = await saveJsonAndGetId(puzzleData);
+ await uploadAudioChunks(sessionId);
+  
  const zip = new JSZip();
  zip.file("puzzle_data.json", JSON.stringify(puzzleData,null,2));
 
