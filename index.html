@@ -390,6 +390,7 @@ const VoiceFeedback = (() => {
       if (avgActivity < cfg.threshold) {
         showPrompt("Please keep speaking your thoughts aloud.");
       }
+      console.debug('avgActivity', avgActivity.toFixed(5));
       accum = 0; frames = 0; // reset window
     }, cfg.intervalSec * 1000);
   }
