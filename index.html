@@ -210,13 +210,13 @@
  // --------------------------------------
  // GLOBAL CONFIG
  // --------------------------------------
- const N = 3; // 3 problems per block
+ const N = 5; // 5 problems per block
 
  const moveGoal = { A: [], B: [], C: [0, 1, 2] };
  const changeGoal = { A: [2], B: [2], C: [2] };
 
  // Randomly sample starting states
- function getRandomIndices(len, exclude = [], count = 3) {
+ function getRandomIndices(len, exclude = [], count = 5) {
  const idxs = [];
  while (idxs.length < count) {
  const i = Math.floor(Math.random() * len);
