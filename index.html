@@ -958,8 +958,8 @@ Change list A to 1.</pre>
  // END OF TRIAL / BLOCK / STUDY
  // --------------------------------------
  function endTrial() {
- stopRecording(() => {
- VoiceFeedback.stop();
+ stopRecording(async () => {
+ await VoiceFeedback.stop();
  const type = blocks[blockIndex];
  allProblemLogs.push({
  blockType:type,
@@ -1045,3 +1045,4 @@ Change list A to 1.</pre>
 </script>
 </body>
 </html>
+
