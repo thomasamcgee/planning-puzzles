@@ -277,7 +277,10 @@
 
  function startRecording(blockNum, trialNum) {
  if (!audioStream) return;
- recorder = new MediaRecorder(audioStream);
+ const rec = new MediaRecorder(stream, {
+  mimeType: "audio/webm;codecs=opus"
+ });
+
  recorder.ondataavailable = e => {
  if (e.data.size > 0) audioChunks.push({ block:blockNum, trial:trialNum, blob:e.data });
  };
@@ -1064,5 +1067,6 @@ async function uploadAudioChunks(sessionId) {
 </script>
 </body>
 </html>
+
 
 
