@@ -998,16 +998,35 @@ Change list A to 1.</pre>
    return (await res.json()).sessionId;
  }
 
- async function uploadAudioChunks(sessionId) {
-   await Promise.all(audioChunks.map(({ block, trial, blob }) => {
-     const fd = new FormData();
-     fd.append("file", blob, `block${block}_problem${trial}.webm`);
-     return fetch(
-       `${API_BASE}/uploadAudio?code=${FUNC_KEY}&sessionId=${sessionId}&block=${block}&trial=${trial}`,
-       { method: "POST", body: fd }
-     );
-   }));
- }
+async function uploadAudioChunks(sessionId) {
+  for (const { block, trial, blob } of audioChunks) {
+
+    /* ------- build multipart/form-data body ------- */
+    const fd = new FormData();
+    fd.append("file", blob, `block${block}_problem${trial}.webm`);
+    fd.append("size", blob.size);               // extra guard
+
+    /* ------- send it, wait for the reply ------- */
+    const url = `${API_BASE}/uploadAudio` +
+                `?code=${FUNC_KEY}` +
+                `&sessionId=${sessionId}` +
+                `&block=${block}&trial=${trial}`;
+
+    const res = await fetch(url, { method: "POST", body: fd });
+
+    /* ------- *always* inspect the response ------- */
+    const text = await res.text();              // read the body *before* you exit
+    if (!res.ok) {
+      throw new Error(`Audio upload failed (${block}-${trial}): ` +
+                      `${res.status} ${text.slice(0,128)}`);
+    }
+    if (+text.trim() !== blob.size) {
+      throw new Error(`Size mismatch (${block}-${trial}): ` +
+                      `sent ${blob.size}, function wrote ${text}`);
+    }
+    console.log(`✓ block ${block} trial ${trial} (${blob.size} bytes)`);
+  }
+}
 
 
 
@@ -1045,4 +1064,5 @@ Change list A to 1.</pre>
 </script>
 </body>
 </html>
+
 
