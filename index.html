@@ -276,51 +276,58 @@
  }
 
  function startRecording(blockNum, trialNum) {
-   if (!audioStream) return;
+  if (!audioStream) return;
   
-   recorder = new MediaRecorder(audioStream, { 
-     mimeType: "audio/webm;codecs=opus" 
-   });
+  recorder = new MediaRecorder(audioStream, { 
+    mimeType: "audio/webm;codecs=opus" 
+  });
 
-   const currentChunks = []; // Collect chunks for this recording
+  const currentChunks = [];
 
-   recorder.ondataavailable = e => {
-     if (e.data.size > 0) {
-       currentChunks.push(e.data);
-     } 
-   };
+  recorder.ondataavailable = e => {
+    if (e.data.size > 0) {
+      currentChunks.push(e.data);
+    } 
+  };
 
-   recorder.onstop = () => {
-      // Create final blob from all chunks
-     const finalBlob = new Blob(currentChunks, { type: 'audio/webm;codecs=opus' });
-     audioChunks.push({ 
-       block: blockNum, 
-       trial: trialNum, 
-       blob: finalBlob 
-     });
-     console.log(`Recording stopped for block ${blockNum}, trial ${trialNum}. Blob size: ${finalBlob.size} bytes`);
-   }; 
+  recorder.onstop = () => {
+    // Create final blob from all chunks
+    const finalBlob = new Blob(currentChunks, { type: 'audio/webm;codecs=opus' });
+    audioChunks.push({ 
+      block: blockNum, 
+      trial: trialNum, 
+      blob: finalBlob 
+    });
+    console.log(`Recording stopped for block ${blockNum}, trial ${trialNum}. Blob size: ${finalBlob.size} bytes`);
+  }; 
 
-   recorder.start(1000); // Collect data every 1000ms
- }
+  // Start recording without timeslice to avoid potential issues
+  recorder.start();
+}
 
- function stopRecording(cb) {
-   if (!recorder) { 
-     cb && cb(); 
-     return; 
-   }
+function stopRecording(cb) {
+  if (!recorder || recorder.state === 'inactive') { 
+    cb && cb(); 
+    return; 
+  }
 
-   // Set up the callback to fire after recording is properly stopped
-   const originalOnStop = recorder.onstop;
-   recorder.onstop = () => {
-     originalOnStop(); // Call the original onstop handler
-     recorder = null;
-     cb && cb(); // Then call the callback
-   };
+  // Set up the callback to fire after recording is properly stopped
+  recorder.onstop = function() {
+    // The original onstop handler has already been called
+    recorder = null;
+    cb && cb();
+  };
 
-   recorder.stop();
- }
-
+  // Request any remaining data before stopping
+  if (recorder.state === 'recording') {
+    recorder.requestData();
+    // Small delay to ensure data is processed
+    setTimeout(() => {
+      recorder.stop();
+    }, 50);
+  }
+}
+ 
 // =============================
    // LIVE VOICE FEEDBACK MODULE (separate from saving recorder)
 
@@ -1083,6 +1090,7 @@ async function uploadAudioChunks(sessionId) {
 </script>
 </body>
 </html>
+
 
 
 
