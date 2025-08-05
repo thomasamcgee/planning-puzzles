@@ -1032,16 +1032,16 @@ Change list A to 1.</pre>
  const FUNC_KEY = "3edoTFVBF3NP2lhr8em7mo1wd4B6bb6No3r-TKVGNfkrAzFu6YRyOA==";
 
  async function saveJsonAndGetId(payload) {
-   const res = await fetch(`${API_BASE}/savePuzzleData?code=${FUNC_KEY}`, {
-     method: "POST",
-     headers: { "Content-Type": "application/json" },
-     body: JSON.stringify(payload)
-   });
-   if (!res.ok) throw new Error(await res.text());
-   return (await res.json()).sessionId;
- }
+  const res = await fetch(`${API_BASE}/savePuzzleData?code=${FUNC_KEY}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return (await res.json()).sessionId;
+}
 
- async function uploadAudioChunks(sessionId) {
+async function uploadAudioChunks(sessionId) {
   for (const { block, trial, blob } of audioChunks) {
     const url = `${API_BASE}/uploadAudio` +
                 `?code=${FUNC_KEY}` +
@@ -1064,47 +1064,40 @@ Change list A to 1.</pre>
   }
 }
 
+async function finishStudy() {
+  if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+  document.getElementById('task-ui').style.display='none';
 
-
- 
-
-
- async function finishStudy() {
- if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
- document.getElementById('task-ui').style.display='none';
-
- const puzzleData = { participantData, puzzleLogs:allProblemLogs };
- const sessionId = await saveJsonAndGetId(puzzleData);
- await uploadAudioChunks(sessionId);
+  const puzzleData = { participantData, puzzleLogs:allProblemLogs };
+  const sessionId = await saveJsonAndGetId(puzzleData);
+  await uploadAudioChunks(sessionId);
   
- const zip = new JSZip();
- zip.file("puzzle_data.json", JSON.stringify(puzzleData,null,2));
+  const zip = new JSZip();
+  zip.file("puzzle_data.json", JSON.stringify(puzzleData,null,2));
 
- audioChunks.forEach(({block,trial,blob}) => {
- zip.file(`block${block}_problem${trial}.webm`, blob);
- });
+  audioChunks.forEach(({block,trial,blob}) => {
+    zip.file(`block${block}_problem${trial}.webm`, blob);
+  });
 
- const zipBlob = await zip.generateAsync({type:"blob"});
- saveAs(zipBlob, "combined_task_data_with_audio.zip");
+  const zipBlob = await zip.generateAsync({type:"blob"});
+  saveAs(zipBlob, "combined_task_data_with_audio.zip");
 
- document.getElementById('end-screen').style.display='block';
- document.addEventListener('keydown', onEndScreenKey);
- }
+  document.getElementById('end-screen').style.display='block';
+  document.addEventListener('keydown', onEndScreenKey);
+}
 
- function onEndScreenKey() {
- document.removeEventListener('keydown', onEndScreenKey);
- console.log("User pressed a key on end screen—trigger payment logic here!");
- }
+function onEndScreenKey() {
+  document.removeEventListener('keydown', onEndScreenKey);
+  console.log("User pressed a key on end screen—trigger payment logic here!");
+}
 
- // --------------------------------------
- // START
- // --------------------------------------
- startIntro();
+// --------------------------------------
+// START
+// --------------------------------------
+startIntro();
 </script>
 </body>
 </html>
-
-
 
 
 
