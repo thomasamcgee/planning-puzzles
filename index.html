@@ -263,19 +263,20 @@
  // AUDIO RECORDING
  // --------------------------------------
  let audioStream = null;
- let recorder = null;
- const audioChunks = []; // {block, trial, blob}
+let recorder = null;
+let recordingStopCallback = null;
+const audioChunks = [];
 
- async function requestAudioPermission() {
-   try {
-     audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-   } catch (e) {
-     console.error(e);
-     showError("Microphone access is needed to record your responses.");
-   }
- }
+async function requestAudioPermission() {
+  try {
+    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    console.error(e);
+    showError("Microphone access is needed to record your responses.");
+  }
+}
 
- function startRecording(blockNum, trialNum) {
+function startRecording(blockNum, trialNum) {
   if (!audioStream) return;
   
   recorder = new MediaRecorder(audioStream, { 
@@ -299,9 +300,18 @@
       blob: finalBlob 
     });
     console.log(`Recording stopped for block ${blockNum}, trial ${trialNum}. Blob size: ${finalBlob.size} bytes`);
+    
+    recorder = null;
+    
+    // Call any pending callback
+    if (recordingStopCallback) {
+      const cb = recordingStopCallback;
+      recordingStopCallback = null;
+      cb();
+    }
   }; 
 
-  // Start recording without timeslice to avoid potential issues
+  // Start recording
   recorder.start();
 }
 
@@ -311,14 +321,8 @@ function stopRecording(cb) {
     return; 
   }
 
-  // Wrap the original onstop handler
-  const originalOnStop = recorder.onstop;
-  recorder.onstop = () => {
-    // Call the original handler first to save the blob
-    originalOnStop();
-    // Then call our callback
-    if (cb) cb();
-  };
+  // Store the callback to be called after recording stops
+  recordingStopCallback = cb;
 
   // Request any remaining data before stopping
   if (recorder.state === 'recording') {
@@ -1092,6 +1096,7 @@ async function uploadAudioChunks(sessionId) {
 </script>
 </body>
 </html>
+
 
 
 
