@@ -1043,23 +1043,33 @@ Change list A to 1.</pre>
 
 async function uploadAudioChunks(sessionId) {
   for (const { block, trial, blob } of audioChunks) {
-    const url = `${API_BASE}/uploadAudio` +
-                `?code=${FUNC_KEY}` +
-                `&sessionId=${sessionId}` +
-                `&block=${block}&trial=${trial}`;
+    try {
+      // Convert blob to ArrayBuffer to ensure proper binary handling
+      const arrayBuffer = await blob.arrayBuffer();
+      
+      const url = `${API_BASE}/uploadAudio` +
+                  `?code=${FUNC_KEY}` +
+                  `&sessionId=${sessionId}` +
+                  `&block=${block}&trial=${trial}`;
 
-    const res = await fetch(url, { 
-      method: "POST", 
-      body: blob,  // Send the blob directly, not wrapped in FormData
-      headers: {
-        'Content-Type': 'audio/webm'
+      const res = await fetch(url, { 
+        method: "POST", 
+        body: arrayBuffer,  // Send ArrayBuffer instead of blob
+        headers: {
+          'Content-Type': 'audio/webm',
+          'Content-Length': arrayBuffer.byteLength.toString()
+        }
+      });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error(`Failed to upload block ${block} trial ${trial}:`, errorText);
+      } else {
+        const response = await res.json();
+        console.log(`✓ block ${block} trial ${trial} (${response.size} bytes)`);
       }
-    });
-    
-    if (!res.ok) {
-      console.error(`Failed to upload block ${block} trial ${trial}:`, await res.text());
-    } else {
-      console.log(`✓ block ${block} trial ${trial} (${blob.size} bytes)`);
+    } catch (error) {
+      console.error(`Error uploading block ${block} trial ${trial}:`, error);
     }
   }
 }
@@ -1098,6 +1108,7 @@ startIntro();
 </script>
 </body>
 </html>
+
 
 
 
