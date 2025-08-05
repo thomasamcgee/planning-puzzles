@@ -311,11 +311,13 @@ function stopRecording(cb) {
     return; 
   }
 
-  // Set up the callback to fire after recording is properly stopped
-  recorder.onstop = function() {
-    // The original onstop handler has already been called
-    recorder = null;
-    cb && cb();
+  // Wrap the original onstop handler
+  const originalOnStop = recorder.onstop;
+  recorder.onstop = () => {
+    // Call the original handler first to save the blob
+    originalOnStop();
+    // Then call our callback
+    if (cb) cb();
   };
 
   // Request any remaining data before stopping
@@ -1090,6 +1092,7 @@ async function uploadAudioChunks(sessionId) {
 </script>
 </body>
 </html>
+
 
 
 
