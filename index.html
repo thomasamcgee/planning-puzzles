@@ -1040,45 +1040,26 @@ Change list A to 1.</pre>
   if (!res.ok) throw new Error(await res.text());
   return (await res.json()).sessionId;
 }
-
 async function uploadAudioChunks(sessionId) {
   for (const { block, trial, blob } of audioChunks) {
-    try {
-      // Convert blob to ArrayBuffer to ensure proper binary handling
-      const arrayBuffer = await blob.arrayBuffer();
-      
-      const url = `${API_BASE}/uploadAudio` +
-                  `?code=${FUNC_KEY}` +
-                  `&sessionId=${sessionId}` +
-                  `&block=${block}&trial=${trial}`;
+    const url = `${API_BASE}/uploadAudio` +
+                `?code=${FUNC_KEY}` +
+                `&sessionId=${sessionId}` +
+                `&block=${block}&trial=${trial}`;
 
-      const res = await fetch(url, { 
-        method: "POST", 
-        body: blob,  // Send ArrayBuffer instead of blob
-        headers: { 'Content-Type': 'audio/webm' }
-      });
-      
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error(`Failed to upload block ${block} trial ${trial} (${res.status}):`, errorText);
-      } else {
-        const responseText = await res.text();
-        console.log(`✓ block ${block} trial ${trial} - Response:`, responseText);
-        
-        // Try to parse as JSON if possible
-        try {
-          const jsonResponse = JSON.parse(responseText);
-          console.log(`Upload successful: ${jsonResponse.size} bytes`);
-        } catch (e) {
-          console.log(`Upload response (not JSON): ${responseText}`);
-        }
-      }
-    } catch (error) {
-      console.error(`Error uploading block ${block} trial ${trial}:`, error);
+    const res = await fetch(url, {
+      method: 'POST',
+      body: blob,                              // send the Blob as-is
+      headers: { 'Content-Type': blob.type || 'audio/webm' }
+      // you can omit the header if blob.type is already "audio/webm"
+    });
+
+    if (!res.ok) {
+      console.error(`Upload failed: ${res.status} ${res.statusText}`);
     }
   }
 }
-
+ 
 async function finishStudy() {
   if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
   document.getElementById('task-ui').style.display='none';
@@ -1113,6 +1094,7 @@ startIntro();
 </script>
 </body>
 </html>
+
 
 
 
