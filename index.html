@@ -1054,11 +1054,8 @@ async function uploadAudioChunks(sessionId) {
 
       const res = await fetch(url, { 
         method: "POST", 
-        body: arrayBuffer,  // Send ArrayBuffer instead of blob
-        headers: {
-          'Content-Type': 'audio/webm',
-          'Content-Length': arrayBuffer.byteLength.toString()
-        }
+        body: blob,  // Send ArrayBuffer instead of blob
+        headers: { 'Content-Type': 'audio/webm' }
       });
       
       if (!res.ok) {
@@ -1116,6 +1113,7 @@ startIntro();
 </script>
 </body>
 </html>
+
 
 
 
