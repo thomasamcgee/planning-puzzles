@@ -1041,25 +1041,32 @@ Change list A to 1.</pre>
    return (await res.json()).sessionId;
  }
 
-async function uploadAudioChunks(sessionId) {
+ async function uploadAudioChunks(sessionId) {
   for (const { block, trial, blob } of audioChunks) {
-
-    /* ------- build multipart/form-data body ------- */
-    const fd = new FormData();
-    fd.append("file", blob, `block${block}_problem${trial}.webm`);
-    fd.append("size", blob.size);               // extra guard
-
-    /* ------- send it, wait for the reply ------- */
     const url = `${API_BASE}/uploadAudio` +
                 `?code=${FUNC_KEY}` +
                 `&sessionId=${sessionId}` +
                 `&block=${block}&trial=${trial}`;
 
-    const res = await fetch(url, { method: "POST", body: fd });
-    console.log(`✓ block ${block} trial ${trial} (${blob.size} bytes)`);
+    const res = await fetch(url, { 
+      method: "POST", 
+      body: blob,  // Send the blob directly, not wrapped in FormData
+      headers: {
+        'Content-Type': 'audio/webm'
+      }
+    });
+    
+    if (!res.ok) {
+      console.error(`Failed to upload block ${block} trial ${trial}:`, await res.text());
+    } else {
+      console.log(`✓ block ${block} trial ${trial} (${blob.size} bytes)`);
+    }
   }
 }
 
+
+
+ 
 
 
  async function finishStudy() {
@@ -1096,6 +1103,7 @@ async function uploadAudioChunks(sessionId) {
 </script>
 </body>
 </html>
+
 
 
 
