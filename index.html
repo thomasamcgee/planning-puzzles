@@ -1063,10 +1063,18 @@ async function uploadAudioChunks(sessionId) {
       
       if (!res.ok) {
         const errorText = await res.text();
-        console.error(`Failed to upload block ${block} trial ${trial}:`, errorText);
+        console.error(`Failed to upload block ${block} trial ${trial} (${res.status}):`, errorText);
       } else {
-        const response = await res.json();
-        console.log(`✓ block ${block} trial ${trial} (${response.size} bytes)`);
+        const responseText = await res.text();
+        console.log(`✓ block ${block} trial ${trial} - Response:`, responseText);
+        
+        // Try to parse as JSON if possible
+        try {
+          const jsonResponse = JSON.parse(responseText);
+          console.log(`Upload successful: ${jsonResponse.size} bytes`);
+        } catch (e) {
+          console.log(`Upload response (not JSON): ${responseText}`);
+        }
       }
     } catch (error) {
       console.error(`Error uploading block ${block} trial ${trial}:`, error);
@@ -1108,6 +1116,7 @@ startIntro();
 </script>
 </body>
 </html>
+
 
 
 
